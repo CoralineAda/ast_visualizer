@@ -1,20 +1,10 @@
-require 'neo4j'
+require 'neo4j-core'
 require 'analyst'
-require 'neo4j/session_manager'
-
-require 'neo4j'
-require 'neo4j/session_manager'
 
 neo4j_url = ENV['NEO4J_URL'] || 'http://localhost:7474'
-
-Neo4j::Core::CypherSession::Adaptors::Base.subscribe_to_query(&method(:puts))
-
-adaptor_type = neo4j_url.match(/^bolt:/) ? :bolt : :http
-Neo4j::ActiveBase.on_establish_session do
-  Neo4j::SessionManager.open_neo4j_session(adaptor_type, neo4j_url)
-end
-
-session = Neo4j::ActiveBase.current_session
+neo4j_username = "neo4j"
+neo4j_password = "foo123"
+Neo4j::Session.open(:server_db, neo4j_url, basic_auth: { username: neo4j_username, password: neo4j_password })
 
 require_relative 'ast_visualizer/ast_node'
 
@@ -25,12 +15,8 @@ module AstVisualizer
       :classes,
       :strings,
       :modules,
-      :constants,
+      # :constants,
       :constant_assignments,
-      :top_level_constant_assignments,
-      :top_level_constants,
-      :top_level_modules,
-      :top_level_classes,
       :method_calls,
       :methods,
       :conditionals,
@@ -38,6 +24,7 @@ module AstVisualizer
     ]
 
     def build_graph(*path_to_files)
+      clean_database
       parser = Analyst::Parser.for_files(*path_to_files)
       parser.top_level_entities.each{ |entity| build_node(entity) }
     end
@@ -45,14 +32,19 @@ module AstVisualizer
     def build_node(entity)
       node = AstVisualizer::AstNode.create(
         name: entity.name,
-        node_type: entity.class.name,
+        node_type: entity.class.name.split("::").last,
         location: entity.location,
         line_number: entity.line_number
       )
       NODE_TYPES.each do |node_type|
-        node.send("#{node_type}=", entity.classes.map{ |subnode| build_node(subnode) })
+        children = entity.send(node_type)
+        children.each{ |child| node.relate(build_node(child), node_type) }
       end
       node
+    end
+
+    def clean_database
+      Neo4j::Session.query("MATCH (a)-[r]->(b) DELETE r, a")
     end
 
   end

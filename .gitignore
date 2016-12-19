@@ -10,4 +10,4 @@
 /test/version_tmp/
 /tmp/
 .env
-db/neo4j
+db/neo4j/
