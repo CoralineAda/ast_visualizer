@@ -16,7 +16,7 @@ end
 
 session = Neo4j::ActiveBase.current_session
 
-require_relative 'ast_visualizer/node'
+require_relative 'ast_visualizer/ast_node'
 
 module AstVisualizer
   module ClassMethods
@@ -43,7 +43,7 @@ module AstVisualizer
     end
 
     def build_node(entity)
-      node = AstVisualizer::Node.create(
+      node = AstVisualizer::AstNode.create(
         name: entity.name,
         node_type: entity.class.name,
         location: entity.location,

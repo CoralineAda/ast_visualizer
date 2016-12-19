@@ -1,5 +1,5 @@
 module AstVisualizer
-  class Node
+  class AstNode
     include Neo4j::ActiveNode
     id_property :uuid, auto: :uuid
     property :name

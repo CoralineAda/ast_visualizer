@@ -71,6 +71,7 @@ PLATFORMS
 DEPENDENCIES
   analyst
   neo4j (~> 8.0.0)
+  neo4j-core
   parser
   thor
 
